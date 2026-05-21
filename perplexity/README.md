@@ -53,10 +53,11 @@ The $+\alpha$ terms are **add-$\alpha$ smoothing** ($\alpha = 0.001$ for example
 Assume the probability is modeled by the following form:
 
 $$
+\begin{aligned}
 P(w_t \mid w_{t-2}, w_{t-1})
-= P_{1}\bigl(w_t \mid c(w_t)\bigr)
-\;\cdot\;
-P_2\bigl(c(w_t) \mid c(w_{t-2}),\, c(w_{t-1})\bigr)
+&= P_{1}\bigl(w_t \mid c(w_t)\bigr) \\
+&\;\cdot\; P_2\bigl(c(w_t) \mid c(w_{t-2}),\, c(w_{t-1})\bigr)
+\end{aligned}
 $$
 
 ### 4.2 Normalization Check
