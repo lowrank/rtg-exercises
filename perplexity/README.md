@@ -14,7 +14,7 @@ This experiment estimates the **entropy of English** by building simple $n$-gram
 
 A language model assigns a probability $P(w_t \mid \text{context})$ to each token. The **cross-entropy** (log scale) and **perplexity** (linear scale) are:
 
-$$\mathcal{L} = -\frac{1}{T}\sum_{t=1}^T \log_2 P(w_t \mid w_{<t})$$
+$$L = -\frac{1}{T}\sum_{t=1}^T \log_2 P(w_t \mid w_{<t})$$
 
 and 
 
