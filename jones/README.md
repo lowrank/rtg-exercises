@@ -54,20 +54,3 @@ In our implementation, this is achieved by randomly sampling weights and biases 
 * **`run_experiments.py`**: Executes the experiment suite, logging the results and saving the error decay plot.
 * **`problem.md`**: Formal definition of the algorithm, constraints, and experimental guidelines.
 * **`proof.md`**: Mathematical exercises detailing the step-by-step convergence proof.
-
----
-
-## 🚀 How to Run the Experiments
-
-### 1. Prerequisites
-Ensure you have Python 3 and the required libraries installed:
-```bash
-pip install torch matplotlib numpy
-```
-
-### 2. Execution
-Run the experiment script to execute all 20 independent trials and regenerate the error decay visualization:
-```bash
-python3 run_experiments.py
-```
-This will print the mean MSE, mean $L^2$ error (RMSE), and standard deviations to the terminal, and save the updated plot as `error_decay_plot.png` in the root directory.
