@@ -12,7 +12,7 @@ $(a,b,c)$ produce different convergence behavior:
 
 - **Standard NS** ($a=1.5, b=-0.5, c=0$): safe but slow
 - **Jordan NS** ($a=3.44, b=-4.78, c=2.03$): fast but can oscillate
-- **Adaptive**: starts conservative, becomes aggressive as training stabilizes
+- **Adaptive**: starts at $a=3.0$, self-tunes toward $a \approx 4.0$ as training stabilizes
 
 **Your task**: explore the coefficient space, find stable $(a,b,c)$ triples,
 and implement an adaptive scheduling mechanism.
@@ -52,7 +52,7 @@ Implement the function `is_stable(a, b, c, n_pts=200)` that checks whether a
 coefficient triple $(a,b,c)$ is stable under 5 NS iterations.
 
 **Requirements:**
-- For all $x \in [10^{-3}, 1]$, after 5 iterations: $0.5 \leq f^5(x) \leq 1.5$
+- For all $x \in [\varepsilon, 1]$ with default $\varepsilon = 10^{-3}$, after 5 iterations: $0.5 \leq f^5(x) \leq 1.5$
 - No intermediate orbit escape: $|f^k(x)| \leq 2$ for all $k = 1,\dots,5$
 - Return `True` only if all test points pass both constraints
 
@@ -159,7 +159,7 @@ This generates `adaptive_ns_comparison.png` comparing:
 - Standard NS converges slowly but steadily
 - Jordan converges fast with some variance
 - FastNS converges fastest but with the most variance
-- Adaptive starts slow (like standard NS) and becomes fast, combining both benefits
+- Adaptive starts at $a=3.0$ and self-tunes, combining stability with speed
 
 ## Background
 
@@ -173,7 +173,7 @@ too weak; values above 1.5 risk orbit escape (divergence).
 
 The NS polynomial must not let any intermediate iterate escape. The constraint:
 
-$$\max_{k=1,\dots,5} |f^{(k)}(x)| \leq 2 \quad \forall x \in (0, 1]$$
+$$\max_{k=1,\dots,5} |f^{(k)}(x)| \leq 2 \quad \forall x \in [\varepsilon, 1]$$
 
 ### Why adapt the coefficients?
 
@@ -188,7 +188,7 @@ An adaptive schedule captures both benefits without hand-tuning.
 - Start with the fixed-point constraint $a+b+c \approx 1$ (relaxed) to narrow the search
 - The free parameter $a = f'(0)$ controls convergence speed for small singular values
 - Jordan's coefficients ($a=3.44$) relax the fixed-point constraint to $f(1) \approx 0.7$
-- The Pareto frontier spans $a \in [1.5, 3.9]$ — trade off speed vs stability
+- The Pareto frontier spans $a \in [3.0, 3.9]$ — trade off speed vs stability
 - For `search_coefficients`, try at least 50,000 random samples
 - For `find_fast_coeffs`, try focusing the search: for each target $a$, optimize only $(b,c)$
 - The `orbit_max` function (provided) is useful for debugging unstable coefficients
