@@ -115,22 +115,6 @@ results = run_all(model, {'gd': gd, 'momentum': momentum, 'adam': adam}, n_runs=
 
 ---
 
-## 7. Exploration Questions
-
-**Q1 (Edge of stability)**. Compute the smallest tangent Hessian eigenvalue at GD convergence. Why is it close to zero? What happens as $N$ increases?
-
-**Q2 (Multiple minima)**. Run GD from 50 different initializations. What's the mean pairwise overlap? Are these genuinely different minima or the same one?
-
-**Q3 (N-dependence)**. How does the gap to $-E_c$ change with $N$? Does the deepest accessible minimum approach $-E_c$ as $N$ increases?
-
-**Q4 (Above vs. below)**. Can you find a critical point with index $>0$ (a true saddle)? Try random initializations and check the Hessian. Where in energy do saddles live?
-
-**Q5 (Choromanska mapping)**. Read Choromanska et al. (2015). Their $E_\infty(H) = 2\sqrt{(H-1)/H}$ matches ABC's $E_c$ with $H=p$. What does their Theorem 4.1 predict about the index of critical points above vs. below the threshold?
-
-**Q6 (Write an optimizer)**. Can you design an optimizer that crosses below $-E_c$ and finds minima in the band?
-
----
-
 ## 8. References
 
 1. Auffinger, A., Ben Arous, G., & Černý, J. (2013). Random matrices and complexity of spin glasses. *Comm. Pure Appl. Math.* 66(2), 165–201.

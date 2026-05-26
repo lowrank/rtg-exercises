@@ -128,7 +128,7 @@ def main():
     p.add_argument("--save", type=str, default='optimizer_comparison.png')
     args = p.parse_args()
 
-    print(f"Spin Glass: N={args.N}, p={args.p}, seed={args.seed}, runs={args.n_runs}")
+    print(f"Spin Glass: N={args.N}, p={args.p}, seed={args.seed}, runs={args.n_runs}s")
     model = SpinGlass(N=args.N, p=args.p, seed=args.seed)
     print(f"Running {args.n_runs} initializations per optimizer...\n")
 
