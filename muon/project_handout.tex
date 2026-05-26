@@ -1,0 +1,241 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=1.1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{mathtools}
+\usepackage{booktabs}
+\usepackage{algorithm,algorithmicx,algpseudocode}
+\usepackage{enumitem}
+\usepackage{mdframed}
+\usepackage[colorlinks=true,linkcolor=blue]{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\poly}{\varphi}
+
+\title{\bfseries Newton--Schulz Coefficients\\
+for the Muon Optimizer}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Background}
+
+\subsection{Newton--Schulz Orthogonalization}
+
+The Muon optimizer~\cite{jordan2024} uses Newton--Schulz (NS) iteration to
+orthogonalize gradient momentum matrices.  For a weight matrix
+$W \in \R^{m \times n}$, the output of SGD-momentum, denoted
+$G_t \in \R^{m \times n}$, is fed into the iteration as a post-processing
+step:
+\[
+X_0 = \frac{G_t}{\|G_t\|_F}, \qquad
+X_{k+1} = a X_k + b X_k X_k^\top X_k + c (X_k X_k^\top)^2 X_k,
+\]
+and the weights are updated as $W_{t+1} = W_t - \eta X_5$.
+
+The iteration acts on the singular values of $G_t$ through the scalar
+polynomial
+\begin{equation}\label{eq:poly}
+\poly(x) = a x + b x^3 + c x^5,
+\end{equation}
+so that if $G_t / \|G_t\|_F = P \Sigma Q^\top$, then the NS output after
+$k$ steps is $P \, \poly^{(k)}(\Sigma) \, Q^\top$, where
+$\poly^{(k)}$ denotes $k$-fold composition.
+
+\subsection{Existing Coefficient Sets}
+
+Two coefficient sets are provided as baselines:
+
+\begin{center}
+\begin{tabular}{lrrrl}
+\toprule
+& $a$ & $b$ & $c$ & Source \\
+\midrule
+Standard NS & 1.500 & $-0.500$ & 0.000 & Classical degree-3 iteration \\
+Jordan NS   & 3.445 & $-4.775$ & 2.032 & Numerical search~\cite{jordan2024} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Standard NS satisfies the exact constraints $\poly(1)=1$ and
+$\poly'(1)=0$, guaranteeing quadratic convergence near 1.  However,
+$a = \poly'(0) = 1.5$ provides weak pull from zero: after 5 iterations,
+a singular value of $10^{-3}$ reaches only $8 \times 10^{-3}$.
+
+Jordan NS relaxes the fixed-point constraint ($\poly(1) \approx 0.70$) in
+exchange for a larger $a = 3.44$.  The same initial value reaches $0.47$ in 5 iterations, yielding substantially faster convergence in practice,
+at the cost of increased step-to-step loss variance.
+
+\subsection{The Problem}
+
+Fixed coefficients cannot be optimal throughout training.  In early
+stages, gradients are high-rank and noisy, favoring conservative $a$.
+In late training, gradients become low-rank, and aggressive $a$
+accelerates convergence.  Moreover, $a=3.44$ was found for a specific
+setting, and there is no guarantee it is optimal for other problems.
+
+This exercise addresses two questions:
+\begin{enumerate}[nosep]
+    \item What is the maximal stable value of $a$, and what $(b,c)$
+          support it?
+    \item Can $a$ be self-tuned during training via a stability
+          feedback signal, avoiding manual coefficient selection?
+\end{enumerate}
+
+\section{Stability Constraints}
+
+A candidate $(a,b,c)$ triple must satisfy two conditions.
+
+\subsection{5-Iteration Band}
+
+After exactly $K=5$ NS iterations, every initial singular value
+$x \in [\varepsilon, 1]$ where $\varepsilon = 10^{-3}$ must land in
+$[0.5, 1.5]$ (this range can be modified):
+\begin{equation}\label{eq:band}
+\forall x \in [\varepsilon, 1]: \quad 0.5 \leq \poly^{(5)}(x) \leq 1.5.
+\end{equation}
+The lower bound ensures effective orthogonalization; the upper bound
+prevents numerical overflow.
+
+Standard NS fails this constraint:
+$\poly^{(5)}(\varepsilon) \approx 0.008 < 0.5$.
+Jordan NS is on the borderline: $\poly^{(5)}_{\min} \approx 0.47$. 
+
+\subsection{Orbit Boundedness}
+
+No intermediate iterate may escape (this range can be modified too):
+\begin{equation}\label{eq:orbit}
+\forall x \in [\varepsilon, 1],\; k = 1,\dots,5:
+\quad |\poly^{(k)}(x)| \leq 2.
+\end{equation}
+If $\poly(x) > 2$, subsequent iterates may exceed the floating-point range,
+producing \texttt{NaN} quickly.  This constraint eliminates coefficient sets (such as
+$a \approx 4.5$) that would otherwise appear admissible from the final-iterate band alone.
+
+\section{Tasks}
+
+\subsection*{Task 1: Stability Check}
+
+\textbf{File:} \texttt{muon/newton\_schulz.py}\\[2pt]
+\textbf{Function:} \texttt{is\_stable(a, b, c, epsilon=1e-3, n\_pts=200)}
+
+Given $(a,b,c)$, verify constraints~\eqref{eq:band}--\eqref{eq:orbit}.
+Sample $n\_pts$ log-spaced points in $[\varepsilon, 1]$, iterate the
+polynomial 5 times for each, and return \texttt{True} iff all points pass.
+\begin{mdframed}
+    \texttt{pytest tests/test\_coeff\_search.py::TestIsStable -v}
+\end{mdframed}
+
+\subsection*{Task 2: Random Coefficient Search}
+
+\textbf{File:} \texttt{muon/coeff\_search.py}\\[2pt]
+\textbf{Function:} \texttt{search\_coefficients(n\_samples=50000, ...)}
+
+Randomly sample $(a,b,c)$ from specified ranges, evaluate each with
+\texttt{is\_stable}, and return the triple with the largest $a$.
+
+\begin{mdframed}
+    \texttt{pytest tests/test\_coeff\_search.py::TestCoeffSearch -v}
+\end{mdframed}
+
+\subsection*{Task 3: Maximal Stable Coefficient}
+
+\textbf{File:} \texttt{muon/coeff\_search.py}\\[2pt]
+\textbf{Function:} \texttt{find\_fast\_coeffs(n\_samples=200000)}
+
+Find the stable $(a,b,c)$ with the maximum $a$.  The result should exceed Jordan's $a=3.44$.
+
+\begin{mdframed}
+\texttt{pytest tests/test\_coeff\_search.py -k find\_fast -v}
+\end{mdframed}
+
+\subsection*{Task 4: Coefficient Lookup Table}
+
+\textbf{File:} \texttt{muon/coeff\_search.py}\\[2pt]
+\textbf{Function:} \texttt{build\_coeff\_table(a\_values)}
+
+For each target $a$ in the input list, run a focused search to find the best stable $(b,c)$ near that $a$.  Return a dictionary
+$\{a_{\rm target} \mapsto (a,b,c)\}$.
+
+The adaptive optimizer's default table contains only two entries
+($a=1.5$ and $a=3.44$).  When the adaptive scheduler requests $a=4.0$,
+nearest-key lookup returns $a=3.44$, and the optimizer never uses
+aggressive coefficients.  This task populates the table with intermediate entries so the adaptive method can function correctly.
+
+\subsection*{Task 5: Adaptive Coefficient Scheduling}
+
+\textbf{File:} \texttt{muon/adaptive\_optimizer.py}\\[2pt]
+\textbf{Method:} \texttt{AdaptiveMuon.step(loss\_val)}
+
+Implement loss-stability feedback:
+
+\begin{algorithm}[H]
+\caption{Adaptive coefficient scheduling}
+\begin{algorithmic}[1]
+\State $a \leftarrow 1.5$; \quad $\overline{\ell}_t$ $\leftarrow$ None; \quad stable\_ct $\leftarrow 0$
+\For{each step with loss $\ell_t$}
+    \If{$\overline{\ell}_t$ is None} \State $\overline{\ell}_t$ $\leftarrow \ell_t$
+    \Else
+        \State $\overline{\ell}_t$ $\leftarrow 0.99 \cdot {}$$\overline{\ell}_t$ ${}+ 0.01 \cdot \ell_t$
+        \If{$\ell_t > 3.0 \cdot {}$$\overline{\ell}_t$}\qquad \text{//\textit{NS iteration too aggressive}}
+            \State $a \leftarrow \max(a - 0.2,\; 1.5)$
+            \State stable\_ct $\leftarrow 0$
+        \Else
+            \State stable\_ct $\leftarrow {}$stable\_ct ${}+ 1$
+            \If{stable\_ct $> 100$}\qquad \text{//\textit{NS iteration too conservative}}
+                \State $a \leftarrow \min(a + 0.05,\; 4.0)$
+            \EndIf
+        \EndIf
+    \EndIf
+    \State Look up $(a,b,c)$ from table; apply NS; update weights
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{mdframed}
+    \texttt{pytest tests/test\_adaptive.py -v}
+\end{mdframed}
+
+\subsection*{Task 6: Experiment}
+
+Run \texttt{python run.py}.  This trains an MLP on random oscillatory
+functions and compares standard NS, Jordan NS, the fastest coefficients
+found by your search, and your adaptive optimizer.  Output:
+\texttt{adaptive\_ns\_comparison.png}.
+
+\section{Open Discussion}
+
+\begin{enumerate}
+    \item Standard NS satisfies $\poly(1)=1$ and $\poly'(1)=0$ exactly, yet
+          $\poly^{(5)}(\varepsilon) \approx 0.008$.  What does this reveal
+          about the tension between asymptotic optimality near $x=1$ and
+          practical convergence for $x \ll 1$?
+
+    \item Jordan's coefficients violate $\poly(1)=1$ by about $0.30$.
+          How far can this constraint be relaxed before the iteration
+          becomes unstable?  What mechanism couples $a$ to the allowable deviation
+          in $\poly(1)$?
+
+    \item The adaptive method starts at $a=1.5$ and climbs toward $a=4.0$.
+          Would initializing directly at $a=4.0$ work?  If not, why?
+
+    \item The spike metric counts epochs where loss exceeds $3\times$
+          the running minimum.  For aggressive coefficients, this count
+          can reach several hundred.  Are these instabilities
+          or artifacts of aggressive exploration?  Propose a metric
+          that distinguishes the two.
+
+    \item Could $a$ be adapted per-layer rather than globally?  What signal would inform per-layer adaptation?
+\end{enumerate}
+
+\begin{thebibliography}{9}
+\bibitem{jordan2024} K.~Jordan.  Muon: An optimizer for hidden layers.
+  \texttt{kellerjordan.github.io/posts/muon/}, 2024.
+\bibitem{amsel2025} N.~Amsel, T.~Persson, C.~Musco, R.~Gower.
+  The Polar Express: optimal matrix sign methods.  \textit{arXiv:2505.16932}, 2025.
+\bibitem{liu2025} J.~Liu, J.~Su, et al.  Muon is scalable for LLM training.
+  \textit{arXiv:2502.16982}, 2025.
+\end{thebibliography}
+
+\end{document}
