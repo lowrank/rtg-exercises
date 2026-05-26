@@ -173,7 +173,7 @@ Implement loss-stability feedback:
 \begin{algorithm}[H]
 \caption{Adaptive coefficient scheduling}
 \begin{algorithmic}[1]
-\State $a \leftarrow 1.5$; \quad $\overline{\ell}_t$ $\leftarrow$ None; \quad stable\_ct $\leftarrow 0$
+\State $a \leftarrow 3.0$; \quad $\overline{\ell}_t$ $\leftarrow$ None; \quad stable\_ct $\leftarrow 0$
 \For{each step with loss $\ell_t$}
     \If{$\overline{\ell}_t$ is None} \State $\overline{\ell}_t$ $\leftarrow \ell_t$
     \Else
@@ -217,7 +217,7 @@ found by your search, and your adaptive optimizer.  Output:
           becomes unstable?  What mechanism couples $a$ to the allowable deviation
           in $\poly(1)$?
 
-    \item The adaptive method starts at $a=1.5$ and climbs toward $a=4.0$.
+    \item The adaptive method start at $a=3.0$ and climbs toward $a=4.0$.
           Would initializing directly at $a=4.0$ work?  If not, why?
 
     \item The spike metric counts epochs where loss exceeds $3\times$

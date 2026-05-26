@@ -83,7 +83,7 @@ maximize $a$ (convergence speed).
 pytest tests/test_coeff_search.py::TestCoeffSearch -v
 ```
 
-**Expected:** Find $a > 1.5$ (beats standard NS) with 5000+ samples.
+**Expected:** Find $a > 3.0$ (beats standard NS) with 5000+ samples.
 
 ---
 

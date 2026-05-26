@@ -46,7 +46,7 @@ class AdaptiveMuon(Optimizer):
     """
 
     def __init__(self, model, lr_muon=0.02, lr_adam=0.001, momentum=0.95,
-                 a_init=1.5, coeff_table=None, ns_steps=5):
+                 a_init=3.0, coeff_table=None, ns_steps=5):
         matrix_params, vector_params = [], []
         for p in model.parameters():
             (matrix_params if p.dim() == 2 else vector_params).append(p)

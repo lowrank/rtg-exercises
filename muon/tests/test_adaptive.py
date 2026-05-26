@@ -22,12 +22,12 @@ class TestAdaptiveMuon:
     """Tests for the adaptive optimizer (students implement the adaptivity)."""
 
     def test_initializes_with_standard_ns(self):
-        """Default init should use standard NS (a=1.5)."""
+        """Default init should use standard NS (a=3.0)."""
         model = TinyModel()
         opt = AdaptiveMuon(model)
-        assert opt.a_target == 1.5
+        assert opt.a_target == 3.0
         a, b, c = opt._get_coeffs(opt.a_target)
-        assert abs(a - 1.5) < 0.01
+        assert abs(a - 3.0) < 0.01
 
     def test_loss_decreases_after_step(self):
         """Loss should decrease after one step."""
@@ -49,7 +49,7 @@ class TestAdaptiveMuon:
     def test_a_stays_in_bounds(self):
         """a should stay in [1.5, 4.0]."""
         model = TinyModel()
-        opt = AdaptiveMuon(model, a_init=1.5)
+        opt = AdaptiveMuon(model, a_init=3.0)
         for _ in range(100):
             opt.step(loss_val=0.1)
         assert 1.5 <= opt.a_target <= 4.0
@@ -58,13 +58,13 @@ class TestAdaptiveMuon:
         """After many stable steps, a should increase above initial value."""
         torch.manual_seed(0)
         model = TinyModel()
-        opt = AdaptiveMuon(model, a_init=1.5)
+        opt = AdaptiveMuon(model, a_init=3.0)
 
         # Feed decreasing losses (simulating stable training)
         for i in range(500):
             opt.step(loss_val=1.0 / (1 + i * 0.01))
 
-        assert opt.a_target > 1.5, (
+        assert opt.a_target > 3.0, (
             f"a should increase during stable training. "
             f"Got a={opt.a_target:.2f}.  Check your loss_ema and stable_count logic."
         )
@@ -73,7 +73,7 @@ class TestAdaptiveMuon:
         """A large loss spike should decrease a."""
         torch.manual_seed(0)
         model = TinyModel()
-        opt = AdaptiveMuon(model, a_init=1.5)
+        opt = AdaptiveMuon(model, a_init=3.0)
 
         # Build up stable history
         for _ in range(200):

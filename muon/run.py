@@ -39,8 +39,8 @@ for name, opt_factory in [
     # After implementing find_fast_coeffs, uncomment:
     # fast = find_fast_coeffs()
     # ('FastNS (your best, fixed)', make_fixed_opt(fast)),
-    ('Adaptive (a_init=1.5)',
-     lambda m: AdaptiveMuon(m, a_init=1.5)),
+    ('Adaptive (a_init=3.0)',
+     lambda m: AdaptiveMuon(m, a_init=3.0)),
 ]:
     finals, mins, spikes_l = [], [], []
     for func_idx in range(n_funcs):
@@ -75,7 +75,7 @@ for name, factory in [
     ('Jordan', make_fixed_opt(JORDAN_NS)),
     # After implementing find_fast_coeffs, uncomment:
     # ('FastNS', make_fixed_opt(find_fast_coeffs())),
-    ('Adaptive', lambda m: AdaptiveMuon(m, a_init=1.5)),
+    ('Adaptive', lambda m: AdaptiveMuon(m, a_init=3.0)),
 ]:
     arr = train_one(target_fn, factory, epochs=epochs, seed=42)
     smoothed = moving_average(arr, window=100)
